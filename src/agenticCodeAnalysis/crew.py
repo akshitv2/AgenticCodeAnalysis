@@ -8,6 +8,8 @@ from crewai_tools import DirectoryReadTool
 import os
 from src.agenticCodeAnalysis.Loaders.AgentLoader import read_yaml_config, get_agents, get_tasks
 from src.agenticCodeAnalysis.llms.gemini import gemini
+from src.agenticCodeAnalysis.llms.local import local_llm
+
 java_project_directory = '/media/akbis/drive/dev/Agentic-Experiments/temp/spring-boot-ecommerce'
 tools = {
     'directory_read_tool': DirectoryReadTool(directory=java_project_directory),
@@ -39,5 +41,10 @@ print("###############################################")
 print("################# RESULT ######################")
 print("###############################################")
 
-for i in tasks_array:
-    print(i.output)
+with open("output.md","a") as f:
+    for i in tasks_array:
+        print(i.output)
+        f.write(str(i.agent.role) + "\n")
+        f.write("\n  ")
+        f.write(str(i.output))
+
