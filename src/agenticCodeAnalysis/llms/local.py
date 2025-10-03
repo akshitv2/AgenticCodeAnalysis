@@ -3,7 +3,8 @@ import os
 from dotenv import load_dotenv
 
 local_llm = LLM(
-    model='gemini/gemini-2.5-flash',
+    model='openai/llama-3',
     temperature=0.7,
-    api_key=""
+    api_key="",
+    base_url="http://192.168.1.15:1234/v1/"
 )

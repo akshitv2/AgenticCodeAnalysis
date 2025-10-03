@@ -1,39 +1,50 @@
+from crewai import Crew, Task, Process, Agent
 import os
 
-from crewai_tools.tools.scrape_website_tool.scrape_website_tool import ScrapeWebsiteTool
-from crewai_tools.tools.serper_dev_tool.serper_dev_tool import SerperDevTool
-from dotenv import load_dotenv
-from crewai import Crew, Task, Process, Agent
-from crewai_tools import DirectoryReadTool
-import os
-from src.agenticCodeAnalysis.Loaders.AgentLoader import read_yaml_config, get_agents, get_tasks
+from src.agenticCodeAnalysis.config.Agents import *
+from src.agenticCodeAnalysis.config.Tasks import *
 from src.agenticCodeAnalysis.llms.gemini import gemini
 from src.agenticCodeAnalysis.llms.local import local_llm
 
-java_project_directory = '/media/akbis/drive/dev/Agentic-Experiments/temp/spring-boot-ecommerce'
-tools = {
-    'directory_read_tool': DirectoryReadTool(directory=java_project_directory),
-    'search_tool': SerperDevTool(),
-    'fetch_webpage_tool': ScrapeWebsiteTool()
-}
-agents_file = "config/agents.yaml"
-agents = get_agents(agents_file, tools = tools, llm=gemini)
-tasks_file = "config/tasks.yaml"
-tasks = get_tasks(tasks_file, agents = agents)
+selected_llm = gemini
+# project_directory = '/mnt/85e3eeea-3bda-4255-95a1-833fffd20e34/dev/Agentic-Experiments/temp/spring-boot-ecommerce'
+project_directory = '/home/akbis/PycharmProjects/AgenticCodeAnalysis/src/agenticCodeAnalysis'
+language = "python"
 
-agents_array = [agents[i] for i in agents.keys()]
-tasks_array = [tasks[i] for i in tasks.keys()]
-# specialist_agents = [agents[i] for i in ['journey_developer', 'java_developer', 'api_developer']]
-# lead_agent = agents['lead_agent']
-# specialist_tasks  = [tasks[i] for i in ['journey_task', 'application_task', 'api_task']]
-# lead_task = tasks['analysis_task']
+default_tools = [get_directory_read_tool(project_directory), get_file_read_tool()]
+security_analyst_tools = [
+    get_directory_read_tool(project_directory),
+    get_file_read_tool(),
+    get_search_tool(),
+    get_fetch_webpage_tool()
+]
+
+lead_agent = get_lead_agent(project_directory=project_directory, language=language, llm=selected_llm, tools=default_tools)
+journey_dev = get_journey_developer(project_directory=project_directory, language=language, llm=selected_llm,
+                                    tools=default_tools)
+app_dev = get_application_developer(project_directory=project_directory, language=language, llm=selected_llm,
+                                    tools=default_tools)
+api_dev = get_api_developer(project_directory=project_directory, language=language, llm=selected_llm, tools=default_tools)
+security_analyst = get_security_analyst(project_directory=project_directory, language=language, llm=selected_llm,
+                                        tools=security_analyst_tools)
+documentation_agent = get_documentation_agent(llm=selected_llm)
+agents_array = [lead_agent, journey_dev, app_dev, api_dev, security_analyst, documentation_agent]
+
+lead_task = get_analysis_task(language, lead_agent)
+journey_task = get_journey_task(language, journey_dev)
+application_task = get_application_task(language, app_dev)
+api_task = get_api_task(language, api_dev)
+security_task = get_security_analysis_task(language, security_analyst)
+documentation_task = get_documentation_task(documentation_agent)
+tasks_array = [lead_task, journey_task, application_task, api_task, security_task, documentation_task]
 
 documentation_crew = Crew(
     agents=agents_array,
     tasks=tasks_array,
     process=Process.sequential,
     verbose=True,
-    manager_agent=agents["lead_agent"]
+    manager_agent=lead_agent,
+    max_rpm=5
 )
 documentation_crew.kickoff()
 
@@ -41,10 +52,11 @@ print("###############################################")
 print("################# RESULT ######################")
 print("###############################################")
 
-with open("output.md","a") as f:
-    for i in tasks_array:
-        print(i.output)
-        f.write(str(i.agent.role) + "\n")
-        f.write("\n  ")
-        f.write(str(i.output))
+print(documentation_task.output)
 
+output_file = "output.md"
+if os.path.exists(output_file):
+    os.remove(output_file)
+
+with open(output_file, "a") as f:
+    f.write(str(documentation_task.output))
