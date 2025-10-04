@@ -9,18 +9,14 @@ from crewai_tools.tools.serper_dev_tool.serper_dev_tool import SerperDevTool
 def get_directory_read_tool(project_directory) -> BaseTool:
     return DirectoryReadTool(directory=project_directory)
 
-
 def get_search_tool():
     return SerperDevTool()
-
 
 def get_fetch_webpage_tool():
     return ScrapeWebsiteTool()
 
-
 def get_file_read_tool():
     return FileReadTool()
-
 
 def get_file_write_tool(directory, filename):
     return FileWriterTool(directory = directory, filename="")
