@@ -1,4 +1,4 @@
-# Agentic Code Analysis Framework: Smarter Software Auditing
+# Agentic AI Code Audit and Analysis Engine
 
 ## Project Overview
 
